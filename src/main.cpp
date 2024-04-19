@@ -26,7 +26,17 @@ int gunMaxAngle = 180;
 int gunMinAngle = 0;
 int fov = 40;
 
+int speed = 10;
+
 const unsigned int MAX_DIST = 23200;
+
+
+struct Position {
+    int x;
+    int y;
+};
+
+Position emptyPos = {0, 0};
 
 void setup() {
   Serial.begin(9600);
@@ -132,7 +142,37 @@ void funnyDemo(){
  delay(1000);
 }
 
+Position getPosition(){
+  if (Serial.available() > 0) {
+    Position pos;
+    // if data is available to read
+    String data = Serial.readStringUntil('\n'); // read the incoming data until newline character
+    int commaIndex = data.indexOf(','); // find the index of the comma
+    if (commaIndex != -1) { // if comma is found
+      String xString = data.substring(0, commaIndex); // extract the substring before comma as X coordinate
+      String yString = data.substring(commaIndex + 1); // extract the substring after comma as Y coordinate
+      pos.x = xString.toInt(); // convert X coordinate string to integer
+      pos.y = yString.toInt(); // convert Y coordinate string to integer
+      // do something with xCoord and yCoord, for example, print them:
+      return pos;
+    }
+  }
+  return {0, 0};
+}
 
+
+void moveServoSpeed(Servo servo, float angle, int speed ){
+  float startAngle = servo.read();
+  float diff = angle - startAngle;
+  int steps = abs(diff);
+  int direction = diff > 0 ? 1 : -1;
+  for(int i = 0; i < steps; i++){
+    servo.write(startAngle + i * direction);
+    delay(speed);
+  }
+
+
+}
 float getAfstand(){
   unsigned long t1;
   unsigned long t2;
@@ -209,17 +249,16 @@ void moveServo(float angle, Servo servo, int max, int min){
   Serial.print(String(newAngle));
   if (newAngle > max) servo.write(max);
   else if (newAngle < min) servo.write(min);
-  else servo.write(newAngle);
+  else moveServoSpeed(servo, newAngle, speed);
   return;
 }
 void fullDemo(){
-  if(redDot){//do nothing
-    int x;// = getPosition(x);
-    int y;// = getPosition(y);
+  Position pos = getPosition();
+  if(pos.x != emptyPos.x && pos.y != emptyPos.y){
 
-    if(!isInMiddle(x, y)){
-      moveServo(getAngle(x, resolutionX), towerServo, towerMaxAngle, towerMinAngle);
-      moveServo(getAngle(y, resolutionY), gunServo, gunMaxAngle, gunMinAngle);
+    if(!isInMiddle(pos.x, pos.y)){
+      moveServo(getAngle(pos.x, resolutionX), towerServo, towerMaxAngle, towerMinAngle);
+      moveServo(getAngle(pos.y, resolutionY), gunServo, gunMaxAngle, gunMinAngle);
     }
     else {
       float afstand = getAfstand();
@@ -249,10 +288,8 @@ int mostFrequent(int* arr, int n)
   
     return element_having_max_freq; 
 } 
-void loop() {
-  towerServo.write(90);
-  delay(1000);
-  towerServo.write(0);
-  delay(1000);
 
-}                                                                                                                                                                                                                                                                                                             
+
+void loop() {
+
+ }                                                                                                                                                                                                                                                                                                             
