@@ -2,6 +2,7 @@
 #include <Servo.h>
 #include <math.h>
 #include <string.h>
+#include <algorithm>
 
 Servo gunServo;
 Servo towerServo;
@@ -14,8 +15,7 @@ Servo triggerServo;
 #define DISTANCE_TRIGGER_PIN 7
 #define DISTANCE_ECHO_PIN 8
 
-//define global variables
-bool redDot = true;
+//definer globale variabler
 float velocity = 14.5;
 int resolutionX = 640;
 int resolutionY = 480;
@@ -36,8 +36,6 @@ struct Position {
     int y;
 };
 
-Position emptyPos = {0, 0};
-
 void setup() {
   Serial.begin(9600);
   pinMode(11, OUTPUT);
@@ -53,32 +51,32 @@ void setup() {
 
   pinMode(3, INPUT);
 
-  // The Trigger pin will tell the sensor to range find
+  // Trigger-pinen fortæller sensoren, at den skal finde området
   pinMode(DISTANCE_TRIGGER_PIN, OUTPUT);
   digitalWrite(DISTANCE_TRIGGER_PIN, LOW);
 
-  //Set Echo pin as input to measure the duration of 
-  //pulses coming back from the distance sensor
+  //Sæt Echo pin som input for at måle varigheden af
+  //impulser, der kommer tilbage fra afstandssensoren
   pinMode(DISTANCE_ECHO_PIN, INPUT);
 }
 
-float GetShootAngle(float distance, float height, float initial_velocity) {
+float getShootangle(float distance, float height, float initial_velocity) {
   if (distance < 0 || distance > 5 || height < 0 || initial_velocity <= 0) {
     Serial.println("Invalid input");
-    return 0; // Return a default value
+    return 0; 
   }
-  float gravity = 9.8; // acceleration due to gravity in m/s^2
+  float gravity = 9.8; 
   float discriminant = pow(initial_velocity, 4) - gravity * (gravity * pow(distance, 2) + 2 * height * pow(initial_velocity, 2));
   if (discriminant < 0) {
     Serial.println("Invalid input - cannot calculate angle");
-    return 0; // Return a default value
+    return 0; 
   }
   
-  // Calculate both possible angles
+  // Beregn begge mulige vinkler
   float angle1 = atan((initial_velocity * initial_velocity + sqrt(discriminant)) / (gravity * distance)) * 180 / PI;
   float angle2 = atan((initial_velocity * initial_velocity - sqrt(discriminant)) / (gravity * distance)) * 180 / PI;
   
-  // Choose the minimum positive angle
+  // Vælg den mindste positive vinkel
   float minAngle = 0;
   if (angle1 > 0 && angle2 > 0) {
     minAngle = min(angle1, angle2);
@@ -88,151 +86,119 @@ float GetShootAngle(float distance, float height, float initial_velocity) {
     minAngle = angle2;
   } else {
     Serial.println("Invalid input - cannot calculate angle");
-    return 0; // Return a default value
+    return 0; 
   }
   
   return minAngle;
 }
-void ShootDemo(){
-  float distance = 0, height = 0, initial_velocity = 0;
-  
-  Serial.println("Calibrating.");
-  
-  gunServo.write(0); // Reset gunServo motor to initial position
-  delay(3000);
-  Serial.println("Done Calibrating!");
-
-    
-  // Prompt user for distance
-  Serial.println("Enter distance (0-5):");
-  while (Serial.available() == 0) {
-    // Wait for user input
-  }
-  distance = Serial.parseFloat();
-    
-  // Prompt user for height
-  Serial.println("Enter height (>= 0):");
-  while (Serial.available() == 0) {
-    // Wait for user input
-  }
-  height = Serial.parseFloat();
-  // Prompt user for initial velocity
-  Serial.println("Enter initial velocity (> 0):");
-  while (Serial.available() == 0) {
-    // Wait for user input
-  }
-  initial_velocity = Serial.parseFloat();
-  // Calculate angle
-  float angle = GetShootAngle(distance, height, initial_velocity);
-    
-  // Display the calculated angle
-  Serial.print("Calculated angle: ");
-  Serial.println(angle);
-  // Control gunServo motor based on the calculated angle
-  gunServo.write(angle); // Assuming you have a gunServo motor connected
-  delay(10000); // Adjust delay as necessary
-}
-void funnyDemo(){
-   for (int i = 0; i < 180; i++)
- {
-    gunServo.write(i);
-    delay(30);
- }
- gunServo.write(0);
- delay(1000);
-}
 
 Position getPosition(){
-  if (Serial.available() > 0) {
-    Position pos;
-    // if data is available to read
-    String data = Serial.readStringUntil('\n'); // read the incoming data until newline character
-    int commaIndex = data.indexOf(','); // find the index of the comma
-    if (commaIndex != -1) { // if comma is found
-      String xString = data.substring(0, commaIndex); // extract the substring before comma as X coordinate
-      String yString = data.substring(commaIndex + 1); // extract the substring after comma as Y coordinate
-      pos.x = xString.toInt(); // convert X coordinate string to integer
-      pos.y = yString.toInt(); // convert Y coordinate string to integer
-      // do something with xCoord and yCoord, for example, print them:
-      return pos;
-    }
-  }
-  return {0, 0};
+  // hvis data er tilgængeligt
+  if (Serial.available() <= 0) return {0, 0};
+
+  Position pos;
+  String data = Serial.readStringUntil('\n'); // læs de indgående data indtil newline-tegnet
+  int commaIndex = data.indexOf(','); // find indekset for kommaet
+
+  if (commaIndex == -1) return {0, 0}; 
+  // hvis kommaet er fundet
+  String xString = data.substring(0, commaIndex); // udtræk delstrengen før kommaet som X-koordinat
+  String yString = data.substring(commaIndex + 1); // udtræk delstrengen efter kommaet som Y-koordinat
+
+  pos.x = xString.toInt(); // konverter X-koordinatstreng til en int
+  pos.y = yString.toInt(); // konverter Y-koordinatstreng til en int
+
+  return pos;
+  
 }
 
 
 void moveServoSpeed(Servo servo, float angle, int speed ){
   float startAngle = servo.read();
-  float diff = angle - startAngle;
-  int steps = abs(diff);
+  float diff = angle - startAngle; // får forskellen mellem startvinklen og slutvinklen
+  int steps = abs(diff); // antal trin, der skal tages for at nå slutvinklen
   int direction = diff > 0 ? 1 : -1;
   for(int i = 0; i < steps; i++){
     servo.write(startAngle + i * direction);
     delay(speed);
   }
-
-
+  return;
 }
+
 float getAfstand(){
   unsigned long t1;
   unsigned long t2;
   unsigned long pulse_width;
-  float cm = 0;
+  float cmArr[10];
 
-    
-  // Hold the trigger pin high for at least 10 us
+  for (int i = 0; i < 10; i++)
+  {
+  // Hold senderpin høj i mindst 10 mikrosekunder
   digitalWrite(DISTANCE_TRIGGER_PIN, HIGH);
   delayMicroseconds(10);
   digitalWrite(DISTANCE_TRIGGER_PIN, LOW);
 
-  // Wait for pulse on echo pin
+  // Vent på puls på ekko-stiften
   while ( digitalRead(DISTANCE_ECHO_PIN) == 0 );
 
-  // Measure how long the echo pin was held high (pulse width)
-  // Note: the micros() counter will overflow after ~70 min
+  // Mål hvor lang tid evho pin er (pulse width)
+  // Bemærk: micros()-tælleren vil løbe over efter ~70 min.
   t1 = micros();
   while ( digitalRead(DISTANCE_ECHO_PIN) == 1);
   t2 = micros();
   pulse_width = t2 - t1;
 
-  // Calculate distance in centimeters and inches. The constants
-  // are found in the datasheet, and calculated from the assumed speed
-  //of sound in air at sea level (~340 m/s).
-  // Wait at least 60ms before next measurement
-  cm += pulse_width / 58.0;
+  // Beregn afstand i centimeter og tommer. Konstanterne
+  // findes i databladet, og beregnes ud fra den antagne hastighed
+  // af lyd i luft ved havets overflade (~340 m/s).
+  cmArr[i] = pulse_width / 58.0;
   
+  // Vent mindst 60 ms før næste måling
   delay(60);
-  
+  }
 
-  return cm;
+  return mostFrequent((int*)cmArr, 10);
 }
+void pullTrigger(int speed, int rotations){
+// Roter med uret i det angivne antal omdrejninger
+  for (int i = 0; i < rotations; i++) {
+    triggerServo.writeMicroseconds(2000); // Set servo to rotate clockwise
+    delay(speed); // Wait for one rotation
+  }
 
+// Roter mod uret for at vende tilbage til udgangspositionen
+  for (int i = 0; i < rotations; i++) {
+    triggerServo.writeMicroseconds(1000);// Sæt servoen til at rotere mod uret
+    delay(speed);// Vent på en rotation
+  }
+}
 float getAngle(int x, int resolution){
-  float angle = (((float)fov / (float)resolution) * (float)x) -20.0;
+  float angle = (((float)fov / (float)resolution) * (float)x) - fov / 2;
   return angle;
 }
 
-bool isInMiddle(int x, int y){
+bool isInMiddle(Position pos){
   int threshold = 10;
   int resolutionXHalf = resolutionX / 2;
   int resolutionYHalf = resolutionY / 2;
-  bool middle = (x > resolutionXHalf + threshold || x < resolutionXHalf - threshold || 
-                  y > resolutionYHalf + threshold || y < resolutionYHalf - threshold);
+  bool middle = (pos.x > resolutionXHalf - threshold && pos.x < resolutionXHalf + threshold) && 
+                (pos.y > resolutionYHalf - threshold && pos.y < resolutionYHalf + threshold);
   return middle;
 }
 
 void affyr(float afstand){
-  //assumes the gun is calibrated and pointing at the red dot
+  //forudsætter, at pistolen er kalibreret og peger på den røde prik
   float servoAngle = gunServo.read(); 
-  float height = servoAngle * sin(afstand);
-  
-  float angle = GetShootAngle(afstand, height, velocity);
+  float height = tan(servoAngle) * afstand;
+  //get the close distance using pythagoean theorem with height and distance
+  float closeDistance = sqrt(pow(afstand, 2) - pow(height, 2));
 
-  gunServo.write(angle);
-  delay(500);
-  triggerServo.write(180);
-  delay(5000);
-  triggerServo.write(0);
+
+  
+  float angle = getShootangle(closeDistance, height, velocity);
+
+  moveServoSpeed(gunServo, angle, speed);
+  pullTrigger(860, 4);
   return;
 }
 
@@ -252,11 +218,11 @@ void moveServo(float angle, Servo servo, int max, int min){
   else moveServoSpeed(servo, newAngle, speed);
   return;
 }
-void fullDemo(){
+void main(){
   Position pos = getPosition();
-  if(pos.x != emptyPos.x && pos.y != emptyPos.y){
+  if(pos.x != 0 && pos.y != 0){
 
-    if(!isInMiddle(pos.x, pos.y)){
+    if(!isInMiddle(pos)){
       moveServo(getAngle(pos.x, resolutionX), towerServo, towerMaxAngle, towerMinAngle);
       moveServo(getAngle(pos.y, resolutionY), gunServo, gunMaxAngle, gunMinAngle);
     }
@@ -267,10 +233,9 @@ void fullDemo(){
   }
 }
 
-
 int mostFrequent(int* arr, int n) 
 { 
-    // code here 
+    sort(arr, arr + arr.length());
     int maxcount = 0; 
     int element_having_max_freq; 
     for (int i = 0; i < n; i++) { 
@@ -289,7 +254,6 @@ int mostFrequent(int* arr, int n)
     return element_having_max_freq; 
 } 
 
-
 void loop() {
-
- }                                                                                                                                                                                                                                                                                                             
+  main();
+}                                                                                                                                                                                                                                                                                                             

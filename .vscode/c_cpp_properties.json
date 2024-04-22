@@ -8,9 +8,9 @@
         {
             "name": "PlatformIO",
             "includePath": [
-                "/home/steen/Code/Robotteknologi-Sentry/include",
-                "/home/steen/Code/Robotteknologi-Sentry/src",
-                "/home/steen/Code/Robotteknologi-Sentry/.pio/libdeps/uno/Servo/src",
+                "/home/steen/code/Robotteknologi-Sentry/include",
+                "/home/steen/code/Robotteknologi-Sentry/src",
+                "/home/steen/code/Robotteknologi-Sentry/.pio/libdeps/uno/Servo/src",
                 "/home/steen/.platformio/packages/framework-arduino-avr/cores/arduino",
                 "/home/steen/.platformio/packages/framework-arduino-avr/variants/standard",
                 "/home/steen/.platformio/packages/framework-arduino-avr/libraries/EEPROM/src",
@@ -23,9 +23,9 @@
             "browse": {
                 "limitSymbolsToIncludedHeaders": true,
                 "path": [
-                    "/home/steen/Code/Robotteknologi-Sentry/include",
-                    "/home/steen/Code/Robotteknologi-Sentry/src",
-                    "/home/steen/Code/Robotteknologi-Sentry/.pio/libdeps/uno/Servo/src",
+                    "/home/steen/code/Robotteknologi-Sentry/include",
+                    "/home/steen/code/Robotteknologi-Sentry/src",
+                    "/home/steen/code/Robotteknologi-Sentry/.pio/libdeps/uno/Servo/src",
                     "/home/steen/.platformio/packages/framework-arduino-avr/cores/arduino",
                     "/home/steen/.platformio/packages/framework-arduino-avr/variants/standard",
                     "/home/steen/.platformio/packages/framework-arduino-avr/libraries/EEPROM/src",
